@@ -27,7 +27,7 @@ where
     Ok(result)
 }
 
-pub fn decode_with_termination(input: &str) -> Result<Vec<u8>, Box<dyn Error>>
+pub fn decode_with_termination(input: &Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>>
 {
 /*     
     // reconstruct string
@@ -36,7 +36,7 @@ pub fn decode_with_termination(input: &str) -> Result<Vec<u8>, Box<dyn Error>>
         Err(e) => return Err(format!("Could not reconstruct string {:?}: {:?}", input, e).into())
     }; 
 */
-    let str = input;
+    let str = std::str::from_utf8(&input).unwrap();
 
     // check if termination sequence is present
     let mut term_sequ: String = str.chars().rev().take(B64_TERMINATION_SEQ.len()).collect();
