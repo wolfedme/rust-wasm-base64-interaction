@@ -2,8 +2,23 @@ use std::cell::Cell;
 use wasmer::{Universal, Array, Instance, MemoryView, Module, Store, Value};
 use wasmer_wasi::WasiState;
 
+use base64_helper::{decode_with_termination, encode_with_termination};
+
+fn b64_test(){
+    let arr = [1, 2, 3];
+    let en = encode_with_termination(&arr).unwrap();
+    let de = decode_with_termination(&en).unwrap();
+
+    println!("original: {:?}", arr);
+    println!("encoded: {:?}", en);
+    println!("decoded: {:?}", de);
+
+}
+
+
 fn main() {
-    // Get module
+    b64_test();
+    // Get module bytes
     let wasm_bytes = std::fs::read("./src/guest_module_singleval.wasm").unwrap();
     // Use of Cranelift or LLVM to support Multi-Value-Returns!
     // Cranelift compiles faster, LLVM runs faster but compiles slower

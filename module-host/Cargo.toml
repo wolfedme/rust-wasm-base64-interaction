@@ -2,6 +2,8 @@
 name = "module-host"
 version = "0.1.0"
 edition = "2021"
+authors = ["Maximilian Wolf"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,3 +12,6 @@ wasmer = "*"
 wasmer-wasi = "*"
 wasmer-compiler-llvm = "*"
 llvm-sys = "130"
+
+[dependencies.base64-helper]
+path="../base64-helper"
