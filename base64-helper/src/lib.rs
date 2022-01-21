@@ -3,7 +3,7 @@ use std::error::Error;
 use base64::{decode, encode, DecodeError};
 
 static B64_MAX_LENGTH: u8 = 64;
-static B64_TERMINATION_SEQ: &str = "%&";
+static B64_TERMINATION_SEQ: &str = "-";
 static _B64_FILLER: &str = "0"; //unused for now
 
 pub fn encode_with_termination<T>(input: T) -> Result<String, Box<dyn Error>>

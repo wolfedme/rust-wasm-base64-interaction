@@ -45,9 +45,10 @@ fn main() {
         .call(&[Value::I32(arr_encoded.len() as i32)])
         .unwrap()[0];
     let arr_ptr = Value::unwrap_i32(&arr_ptr) as usize;
-
     // write bytes into module memory
     let memory = instance.exports.get_memory("memory").unwrap();
+
+    _debug_print_mem_bytes(&memory, arr_ptr, arr_encoded.len());
     for (byte, cell) in arr_encoded
         .bytes()
         .zip(memory.view()[arr_ptr as usize..arr_ptr + arr_encoded.len()].iter())
@@ -61,7 +62,7 @@ fn main() {
     );
 
     // print subject in module memory
-    _debug_print_mem_bytes(&memory, arr_ptr, arr_encoded.len());
+    _debug_print_mem_bytes(&memory, arr_ptr, arr_encoded.len()+1);
 
     // call module reverse function
     let arr_reverse_ptr_to_encoded = instance
@@ -81,16 +82,19 @@ fn main() {
         arr_reverse_encoded
     );
 
-    let arr_reverse_decoded = decode_with_termination(&arr_reverse_encoded);
+    let arr_reverse_decoded = decode_with_termination(&arr_reverse_encoded).unwrap();
     let rev_arr_check: Vec<u8> = arr.into_iter().rev().collect();
+
+    _debug_print_mem_bytes(&memory, arr_reverse_ptr_to_encoded, arr_reverse_decoded.len());
+
     println!(
         "Result: {:?}\nFrom: {:?}",
-        &arr_reverse_decoded.as_ref().unwrap(),
+        &arr_reverse_decoded,
         arr
     );
     println!(
         "Module reversed array: {:?}",
-        &arr_reverse_decoded.unwrap() == &rev_arr_check
+        &arr_reverse_decoded == &rev_arr_check
     );
 
     // TODO!: Deallocate mem
@@ -168,7 +172,7 @@ fn read_until_sequence(memory: &wasmer::Memory, ptr: usize) -> Vec<u8> {
         sequence.push(val);
 
         let sequence_iter = sequence.to_vec();
-        let term_sequ: Vec<u8> = sequence_iter.into_iter().rev().take(2).collect();
+        let term_sequ: Vec<u8> = sequence_iter.into_iter().rev().take(base64_helper::get_termination_sequence().len()).collect();
         let term_sequ: Vec<u8> = term_sequ.into_iter().rev().collect();
 
         if term_sequ == get_termination_sequence().as_bytes() {
