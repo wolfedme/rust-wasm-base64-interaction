@@ -1,5 +1,4 @@
-use std::cell::Cell;
-use wasmer::{Array, Instance, MemoryView, Module, Store, Universal, Value};
+use wasmer::{Instance, MemoryView, Module, Store, Universal, Value};
 use wasmer_wasi::WasiState;
 
 use base64_helper::{
@@ -27,7 +26,7 @@ fn main() {
     let import_object = wasi_env.import_object(&module).unwrap();
     let instance = Instance::new(&module, &import_object).unwrap();
 
-    let greet = instance.exports.get_function("greet").unwrap();
+    let _greet = instance.exports.get_function("greet").unwrap();
     let allocate = instance.exports.get_function("allocate").unwrap();
     let deallocate = instance.exports.get_function("deallocate").unwrap();
 
@@ -72,20 +71,20 @@ fn main() {
         .call(&[Value::I32(arr_ptr as i32)])
         .unwrap();
     // convert back to native value
-    let arr_reverse_ptr_to_encoded = Value::unwrap_i32(&arr_reverse_ptr_to_encoded[0]) as usize;
+    let result_ptr = Value::unwrap_i32(&arr_reverse_ptr_to_encoded[0]) as usize;
 
-    let arr_reverse_encoded = read_until_sequence(memory, arr_reverse_ptr_to_encoded);
+    let result_b64 = read_until_sequence(memory, result_ptr);
     println!(
         "Found encoded string at address 0x{:?} + {:?}: {:?}",
-        arr_reverse_ptr_to_encoded,
-        arr_reverse_encoded.len(),
-        arr_reverse_encoded
+        result_ptr,
+        result_b64.len(),
+        result_b64
     );
 
-    let arr_reverse_decoded = decode_with_termination(&arr_reverse_encoded).unwrap();
+    let arr_reverse_decoded = decode_with_termination(&result_b64).unwrap();
     let rev_arr_check: Vec<u8> = arr.into_iter().rev().collect();
 
-    _debug_print_mem_bytes(&memory, arr_reverse_ptr_to_encoded, arr_reverse_decoded.len());
+    _debug_print_mem_bytes(&memory, result_ptr, arr_reverse_decoded.len());
 
     println!(
         "Result: {:?}\nFrom: {:?}",
@@ -99,65 +98,10 @@ fn main() {
 
     // TODO!: Deallocate mem
 
-    /*
-       // -------------
-       // hello world string
-       // -------------
+    let res1 = deallocate.call(&[Value::I32(arr_ptr as i32), Value::I32(arr_encoded.len() as i32)]);
+    let res2 = deallocate.call(&[Value::I32(result_ptr as i32), Value::I32(result_b64.len() as i32)]);
 
-       // subject to bytes
-       let subject = "Wasmer";
-       // length to allocate
-       let subject_length = subject.len();
-
-       /*     // get pointer as boxed wasmer value & allocate
-       let input_pointer = allocate.call(&[Value::I32(subject_length as i32)]).unwrap();
-       // unboxed wasmer value
-       let input_pointer_unpacked = &input_pointer[0]; */
-       // convert back to native usize
-       let ptr_in = &allocate.call(&[Value::I32(subject_length as i32)]).unwrap()[0];
-       let ptr_in = Value::unwrap_i32(&ptr_in) as usize;
-
-       // https://radu-matei.com/blog/practical-guide-to-wasm-memory/
-       let memory = instance.exports.get_memory("memory").unwrap();
-       // https://github.com/wasmerio/wasmer-rust-example/blob/master/examples/string.rs
-       // write into linear memory
-       for (byte, cell) in subject
-           .bytes()
-           .zip(memory.view()[ptr_in as usize..ptr_in + subject_length].iter())
-       {
-           cell.set(byte);
-       }
-
-       _debug_print_mem_bytes(&memory, ptr_in, subject_length);
-
-       // debug: rebuild string from module memory
-       let in_vec: Vec<u8> = memory.view()[ptr_in as usize..(ptr_in + subject_length)]
-           .iter()
-           .map(|cell| cell.get())
-           .collect();
-
-       println!("str_vec: {:?}", in_vec);
-       // Convert the subslice to a `&str`.
-       let string = std::str::from_utf8(&in_vec).unwrap();
-
-       println!("inputstring from mem: {:?}", string);
-
-       let output = greet.call(&[Value::I32(ptr_in as i32)]).unwrap();
-
-       println!("Output: {:?}", output);
-
-       let output_pointer_native = Value::unwrap_i32(&output[0]);
-
-       // TODO! Currently reads from pointer to memory end. Need to supply additional len
-       let out_vec: Vec<u8> = memory.view()
-           [output_pointer_native as usize..(output_pointer_native + 14) as usize]
-           .iter()
-           .map(|cell| cell.get())
-           .collect();
-
-       println!("out: {:?}", out_vec);
-       println!("out: {:?}", std::str::from_utf8(&out_vec).unwrap());
-    */
+    println!("Deallocation: {:?}, {:?}", res1, res2);
 }
 
 fn read_until_sequence(memory: &wasmer::Memory, ptr: usize) -> Vec<u8> {
@@ -201,7 +145,7 @@ fn _debug_print_mem_bytes(memory: &wasmer::Memory, ptr: usize, len: usize) {
         let tempcell = &[cell.get()];
         let utf8val = match std::str::from_utf8(tempcell) {
             Ok(v) => v,
-            Err(e) => "!=",
+            Err(_e) => "!=",
         };
         println!(
             "0x{0: <10} | {1: <6} | {2: <6}",

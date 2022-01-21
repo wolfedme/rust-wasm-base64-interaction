@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use base64::{decode, encode, DecodeError};
+use base64::{decode, encode};
 
 static B64_MAX_LENGTH: u8 = 64;
 static B64_TERMINATION_SEQ: &str = "-";
@@ -29,13 +29,6 @@ where
 
 pub fn decode_with_termination(input: &Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>>
 {
-/*     
-    // reconstruct string
-    let str = match std::str::from_utf8(bytes) {
-        Ok(s) => s,
-        Err(e) => return Err(format!("Could not reconstruct string {:?}: {:?}", input, e).into())
-    }; 
-*/
     let str = std::str::from_utf8(&input).unwrap();
 
     // check if termination sequence is present
